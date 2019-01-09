@@ -5,7 +5,7 @@ set -e
 LB_NAME=$1
 NUM=$2
 
-list=$(aws elb describe-load-balancers --load-balancer-name LB-jpstore-dev-web | jq ".LoadBalancerDescriptions[].Instances")
+list=$(aws elb describe-load-balancers --load-balancer-name ${LB_NAME} | jq ".LoadBalancerDescriptions[].Instances")
 deregistered_list=$(echo $list | jq -r ".[:$NUM]")
 echo "###### ${LB_NAME} detach ec2 list ######"
 echo "$deregistered_list" | jq '.[].InstanceId'
