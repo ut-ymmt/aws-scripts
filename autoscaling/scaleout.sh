@@ -21,21 +21,21 @@ target_instances=$(aws autoscaling describe-auto-scaling-groups \
   --auto-scaling-group-name $ASG_NAME \
   --query 'AutoScalingGroups[].Instances[].{InstanceId: InstanceId}')
 
-wait_condition=$DESIRED_CAPACITY
+MAX_TRIALS=60
+INTERVAL_SEC=10 # timeout = max_trials * interval_sec
+WAIT_CONDITION=$DESIRED_CAPACITY
 current_instances=0
-max_trials=60
-interval_sec=10 # timeout = max_trials * interval_sec
 current_trials=0
 
-echo "ELBのリスナーがdesired_capacityを満たすまで待機(max_retry: ${max_trials})"
-while [ $wait_condition -gt $current_instances -a $max_trials -gt $current_trials ]
+echo "ELBのリスナーがdesired_capacityを満たすまで待機(retry_limit: ${MAX_TRIALS})"
+while [ $WAIT_CONDITION -gt $current_instances -a $MAX_TRIALS -gt $current_trials ]
 do
   current_instances=$(aws --profile jpstore elb describe-instance-health \
     --load-balancer-name $LB_NAME \
     --query "length(InstanceStates[?State=='InService'])")
   current_trials=$((${current_trials}+1))
-  echo "number_of_trials: ${current_trials}, instances: ${current_instances}"
-  sleep $interval_sec
+  echo "retry_count: ${current_trials}, instances: ${current_instances}"
+  sleep $INTERVAL_SEC
 done
 
 echo 'スケールアウト完了'
